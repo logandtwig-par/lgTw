@@ -1,0 +1,8 @@
+se/logandtwig/todo/TodoApplication.class
+se/logandtwig/todo/model/TodoEntity.class
+se/logandtwig/todo/repository/UserRepository.class
+se/logandtwig/todo/repository/TodoRepository.class
+se/logandtwig/todo/validations/TodoValidator.class
+se/logandtwig/todo/model/UserEntity.class
+se/logandtwig/todo/controller/response/TodoDto.class
+se/logandtwig/todo/controller/TodoApi.class

@@ -91,14 +91,12 @@ public class TodoApi {
 /** * /
 1. En POST-endpoint som sparar en ny TODO till databasen och svarar med den skapade TODOn, inkl. IDt.
 /** * /
-
 	@PostMapping("/todo")
 	public TodoDto create(@RequestBody TodoDto todo,
 	                      @RequestParam(value = "username") String username) {
 
 		//return new TodoDto(); // Implement me
 	}
-
 /** */
 
 //--> Bytte till TodoEntity, fattade inte hur jag skulle fån värdena från TodoDto utan setters

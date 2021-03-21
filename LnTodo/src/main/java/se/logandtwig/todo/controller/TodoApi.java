@@ -3,13 +3,17 @@ package se.logandtwig.todo.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import se.logandtwig.todo.controller.response.TodoDto;
 import se.logandtwig.todo.model.TodoEntity;
 import se.logandtwig.todo.model.UserEntity;
 import se.logandtwig.todo.repository.TodoRepository;
 import se.logandtwig.todo.repository.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,19 +30,6 @@ public class TodoApi {
         return "SAY HIIII!!";
     }
 
-/*List all players in the player database* /
-    @GetMapping(path="/player")
-    @CrossOrigin()
-
-    List<Player> getAll(){
-		
-		var l = new ArrayList<Player>();
-		for(Player r : playerRepository.findAll())
-		{
-			l.add(r);
-		}
-		return l;
-	}
 
 /** * /
 2. En GET-endpoint som svarar med en lista som innehåller en given användares samtliga TODOs i databasen.
@@ -68,23 +59,39 @@ public class TodoApi {
     3.1 Om det givna IDt för TODOn inte matchar den givna användarens username ska detta hanteras på lämpligt sätt.
 /**/
 	@GetMapping("/todo/{id}")
-	public TodoDto getOne(@PathVariable(value = "id") Long id, //ToDo ID
-	                      @RequestParam(value = "username") String username) { //The user --> Make sure the user owns this ToDo ID
-		String Return_String;
+//	public TodoDto getOne(@PathVariable(value = "id") Long id, @RequestParam(value = "username") String username) { //ToDo ID //The user --> Make sure the user owns this ToDo ID
+	public ResponseEntity<TodoDto> getOne (@PathVariable(value = "id") Long id, @RequestParam(value = "username") String username) { //ToDo ID //The user --> Make sure the user owns this ToDo ID	
+		String Return_String="";
 
-		if (!todoRepository.findById(id).isPresent()) {//Check if the ToDo ID exists
-			Return_String="ID DOES NOT EXIST DUDE";
-		} else {
-
-			if (todoRepository.findById(id).get().getOwner().getUsername().equals(username)) { //getOwner is a UserEntity. Use to match with the findById in the TodoEntity
-				Return_String = todoRepository.findById(id).get().getTask();
-			} else {
-				Return_String="THE DUDE DOES NOT MATCH THE ID, DUDE";
-			}
-
-		}	
-
-		return new TodoDto(id,Return_String,username);
+		try { //just in case someone throws null into id
+			if (!todoRepository.findById(id).isPresent() || !todoRepository.findById(id).get().getOwner().getUsername().equals(username)) {//Check if the ToDo ID and username exists
+				//Return_String="ID DOES NOT EXIST DUDE"; //Return_String="THE DUDE DOES NOT MATCH THE ID, DUDE";
+				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+			
+			} /** / else {
+	
+				if (!todoRepository.findById(id).get().getOwner().getUsername().equals(username)) { //getOwner is a UserEntity. Use to match with the findById in the TodoEntity
+					Return_String = todoRepository.findById(id).get().getTask();
+				} else {
+					
+					return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+				}
+			}/**/	
+		} catch (Exception e) {
+			System.out.println("Make sure the id is not null.");
+		}
+				
+/** /
+		TodoDto p = new TodoDto();
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+        .path("/{id}")
+        .buildAndExpand(p.getId())
+        .toUri();
+		
+		return ResponseEntity.created(location).header("MyResponseHeader", "MyValue").contentType(MediaType.APPLICATION_JSON).body(new TodoDto(id,Return_String,username));
+	/**/
+		return ResponseEntity.ok(new TodoDto(id,todoRepository.findById(id).get().getTask(),username));
+		//return new TodoDto(id,Return_String,username);
 	}
 
 

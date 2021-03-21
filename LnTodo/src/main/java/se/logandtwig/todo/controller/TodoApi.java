@@ -2,6 +2,7 @@ package se.logandtwig.todo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -20,9 +21,9 @@ import java.util.List;
 @RestController
 public class TodoApi {
 
-	@Autowired
-	private TodoRepository todoRepository;
-	private UserRepository userRepository;
+	@Autowired private UserRepository userRepository;
+	@Autowired private TodoRepository todoRepository;
+	
 
 /*Home message*/
     @GetMapping("/")
@@ -93,26 +94,26 @@ public class TodoApi {
 
 /** * /
 1. En POST-endpoint som sparar en ny TODO till databasen och svarar med den skapade TODOn, inkl. IDt.
-/** * /
-	@PostMapping("/todo")
-	public TodoDto create(@RequestBody TodoDto todo,
-	                      @RequestParam(value = "username") String username) {
-
-		//return new TodoDto(); // Implement me
-	}
 /** */
+//--> Bytte till TodoEntity i requestbodyn, fattade inte hur jag skulle få värdena från TodoDto utan setters i entityn
+	@PostMapping("/todo")
+	public ResponseEntity<TodoDto> create(@RequestBody TodoEntity todo, @RequestParam(value = "username") String username) {
+		
+		//Check if the ToDo ID and username exists
+		if ((todo.getTask().isEmpty()) || (todo.getOwner() == null) || (todo.getOwner().getId() == null)) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).header("Error Message", "id(owner:{id:}) or task description(task:) is missing").build();
+		}
 
-//--> Bytte till TodoEntity, fattade inte hur jag skulle fån värdena från TodoDto utan setters
-@PostMapping("/todo")
-public TodoDto create(@RequestBody TodoEntity todo, 
-					  @RequestParam(value = "username") String username) {
-
-	todoRepository.save(todo);
-	String taskInsertInEntity = todo.getTask();
-
-
-	return new TodoDto(todo.getId(),taskInsertInEntity,"THIS IS NOT RETURNED");
-}
+		//Check if username matches userID in the request. If it does, save and return, otherwise NOT_FOUND reply 
+		for (int i = 0; i < userRepository.count(); i++) { 
+			if ((userRepository.findAll().get(i).getUsername().equals(username)) && (todo.getOwner().getId() == userRepository.findAll().get(i).getId())) {
+				todoRepository.save(todo);
+				return ResponseEntity.ok(new TodoDto(todo.getId(),todo.getTask(),username));
+			}
+		}
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).header("Error Message", "id did not match with the username").build();
+		
+	}
 
 /** * / 
 4. En DELETE-endpoint som tar bort en specifik TODO från databasen, förutsatt att den tillhör användaren.
@@ -120,10 +121,20 @@ public TodoDto create(@RequestBody TodoEntity todo,
 /** */
 
 	@DeleteMapping("/todo/{id}")
-	public TodoDto delete(@PathVariable(value = "id") Long id,
-	                      @RequestParam(value = "username") String username) {
+	public ResponseEntity<TodoDto> delete(@PathVariable(value = "id") Long id,@RequestParam(value = "username") String username) {
+
+		try {
+			if (!todoRepository.findById(id).get().getOwner().getUsername().equals(username)){
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).header("Error Message", "Task id does not match username").build();	
+			}
+
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).header("Error Message", "Task id is not defined").build();	
+		}
+		
 		todoRepository.deleteById(id);
-		return new TodoDto(); // Implement me
+		return ResponseEntity.status(HttpStatus.OK).header("Message", "Item was deleted").build();		
+		
 	}
 
 	/*Change a player with the selected id with PUT --> all info needs to be sent again* /
@@ -146,8 +157,28 @@ Player update(@PathVariable Integer id, @RequestBody Player updatedPlayer){ //ge
 
 	// Optional bonus! //
 	@PutMapping("/todo")
-	public TodoDto edit(@RequestBody TodoDto todo,
-	                    @RequestParam(value = "username") String username) {
-		return new TodoDto(); // Implement me
+	public ResponseEntity<TodoDto> edit(@RequestBody TodoEntity todo,@RequestParam(value = "username") String username) {
+		
+		//Check input values, entire todo entity needed
+		if (todo.getId().equals(null) || 
+			todo.getTask().isEmpty() || 
+			todo.getOwner().equals(null) ||
+			todo.getOwner().getUsername().isEmpty() || 
+			todo.getOwner().getId().equals(null)) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).header("Error Message", "Fill in all fields in the todo entity").build();
+		}
+
+		try {
+			if (!todoRepository.findById(todo.getId()).get().getOwner().getUsername().equals(username)){
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).header("Error Message", "Task id does not match username").build();	
+			}
+
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).header("Error Message", "Task id is not defined").build();	
+		}
+		
+		todoRepository.save(todo);
+		return ResponseEntity.status(HttpStatus.OK).header("Message", "Item was changed").body(new TodoDto(todo.getId(),todo.getTask(),username));		
+	
 	}
 }

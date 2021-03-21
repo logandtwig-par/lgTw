@@ -137,22 +137,6 @@ public class TodoApi {
 		
 	}
 
-	/*Change a player with the selected id with PUT --> all info needs to be sent again* /
-@PutMapping(path="/player/{id}", consumes="application/json", produces="application/json")
-@CrossOrigin()
-Player update(@PathVariable Integer id, @RequestBody Player updatedPlayer){ //get player data from the rest interface
-	Player dbPlayer = playerRepository.findById(id).get(); //get player by id from the database
-
-	dbPlayer.setBorn(updatedPlayer.getBorn());
-	dbPlayer.setAge(updatedPlayer.getAge());
-	dbPlayer.setName(updatedPlayer.getName());
-	dbPlayer.setJersey(updatedPlayer.getJersey());
-
-	playerRepository.save(dbPlayer);
-
-	return dbPlayer;
-}
-
 /**/
 
 	// Optional bonus! //

@@ -61,27 +61,17 @@ public class TodoApi {
 	@GetMapping("/todo/{id}")
 //	public TodoDto getOne(@PathVariable(value = "id") Long id, @RequestParam(value = "username") String username) { //ToDo ID //The user --> Make sure the user owns this ToDo ID
 	public ResponseEntity<TodoDto> getOne (@PathVariable(value = "id") Long id, @RequestParam(value = "username") String username) { //ToDo ID //The user --> Make sure the user owns this ToDo ID	
-		String Return_String="";
 
 		try { //just in case someone throws null into id
 			if (!todoRepository.findById(id).isPresent() || !todoRepository.findById(id).get().getOwner().getUsername().equals(username)) {//Check if the ToDo ID and username exists
-				//Return_String="ID DOES NOT EXIST DUDE"; //Return_String="THE DUDE DOES NOT MATCH THE ID, DUDE";
 				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-			
-			} /** / else {
-	
-				if (!todoRepository.findById(id).get().getOwner().getUsername().equals(username)) { //getOwner is a UserEntity. Use to match with the findById in the TodoEntity
-					Return_String = todoRepository.findById(id).get().getTask();
-				} else {
-					
-					return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-				}
-			}/**/	
+			}
 		} catch (Exception e) {
-			System.out.println("Make sure the id is not null.");
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 		}
+		return ResponseEntity.ok(new TodoDto(id,todoRepository.findById(id).get().getTask(),username));
 				
-/** /
+/*alternative returns* /
 		TodoDto p = new TodoDto();
 		URI location = ServletUriComponentsBuilder.fromCurrentRequest()
         .path("/{id}")
@@ -90,7 +80,7 @@ public class TodoApi {
 		
 		return ResponseEntity.created(location).header("MyResponseHeader", "MyValue").contentType(MediaType.APPLICATION_JSON).body(new TodoDto(id,Return_String,username));
 	/**/
-		return ResponseEntity.ok(new TodoDto(id,todoRepository.findById(id).get().getTask(),username));
+		
 		//return new TodoDto(id,Return_String,username);
 	}
 

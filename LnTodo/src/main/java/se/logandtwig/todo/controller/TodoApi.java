@@ -35,15 +35,17 @@ public class TodoApi {
 2. En GET-endpoint som svarar med en lista som innehåller en given användares samtliga TODOs i databasen.
 /* * */
 	@GetMapping("/todo")
-	public List<TodoEntity> getAll(@RequestParam(value = "username") String username) {
+	public ResponseEntity<List<TodoEntity>> getAll(@RequestParam(value = "username") String username) {
 		
 		ArrayList<TodoEntity> todoList = new ArrayList<TodoEntity>();
-/** * /
+
+/** Didn't figure extended for out....outherwise that looks way more badass * /
 		for(TodoEntity r : todoRepository.findAll())
 		{
 			todoList.add(r);
 		}
 /** */
+
 		for (int i = 0; i < todoRepository.count(); i++) {
 
 			if (todoRepository.findAll().get(i).getOwner().getUsername().equals(username)){
@@ -51,7 +53,11 @@ public class TodoApi {
 			}
 		}
 
-		return todoList;//new ArrayList<>(); // Implement me
+		if (todoList.isEmpty()) { //nothing found for this user
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
+
+		return ResponseEntity.ok(todoList);//new ArrayList<>(); // Implement me
 	}
 
 /** /

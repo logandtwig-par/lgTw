@@ -1,8 +1,8 @@
-/home/simon/Git/LnTodo/src/main/java/se/logandtwig/todo/TodoApplication.java
-/home/simon/Git/LnTodo/src/main/java/se/logandtwig/todo/controller/response/TodoDto.java
-/home/simon/Git/LnTodo/src/main/java/se/logandtwig/todo/model/UserEntity.java
-/home/simon/Git/LnTodo/src/main/java/se/logandtwig/todo/model/TodoEntity.java
-/home/simon/Git/LnTodo/src/main/java/se/logandtwig/todo/repository/UserRepository.java
-/home/simon/Git/LnTodo/src/main/java/se/logandtwig/todo/validations/TodoValidator.java
-/home/simon/Git/LnTodo/src/main/java/se/logandtwig/todo/controller/TodoApi.java
-/home/simon/Git/LnTodo/src/main/java/se/logandtwig/todo/repository/TodoRepository.java
+C:\Users\tallnerc\Documents\_Trainings\LogTwig\Clone\LnTodo\src\main\java\se\logandtwig\todo\model\UserEntity.java
+C:\Users\tallnerc\Documents\_Trainings\LogTwig\Clone\LnTodo\src\main\java\se\logandtwig\todo\controller\TodoApi.java
+C:\Users\tallnerc\Documents\_Trainings\LogTwig\Clone\LnTodo\src\main\java\se\logandtwig\todo\model\TodoEntity.java
+C:\Users\tallnerc\Documents\_Trainings\LogTwig\Clone\LnTodo\src\main\java\se\logandtwig\todo\controller\response\TodoDto.java
+C:\Users\tallnerc\Documents\_Trainings\LogTwig\Clone\LnTodo\src\main\java\se\logandtwig\todo\repository\TodoRepository.java
+C:\Users\tallnerc\Documents\_Trainings\LogTwig\Clone\LnTodo\src\main\java\se\logandtwig\todo\repository\UserRepository.java
+C:\Users\tallnerc\Documents\_Trainings\LogTwig\Clone\LnTodo\src\main\java\se\logandtwig\todo\TodoApplication.java
+C:\Users\tallnerc\Documents\_Trainings\LogTwig\Clone\LnTodo\src\main\java\se\logandtwig\todo\validations\TodoValidator.java

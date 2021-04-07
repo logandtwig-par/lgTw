@@ -1,5 +1,6 @@
 package se.logandtwig.todo.model;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -12,19 +13,15 @@ import javax.persistence.ManyToOne;
 public class TodoEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id; // was int
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", unique = true, nullable = false)
+    private Long id;
 
-    /**
-     * The title of the task
-     */
+    @Column(name = "task")
     private String task;
 
-    /**
-     * The title of the task
-     */
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id")
+    @ManyToOne
+    @JoinColumn(name = "id")
     private UserEntity owner;
 
     public Long getId() {
@@ -35,7 +32,15 @@ public class TodoEntity {
         return task;
     }
 
+    public void setTask(String task) {
+        this.task = task;
+    }
+
     public UserEntity getOwner() {
         return owner;
+    }
+
+    public void setOwner(UserEntity owner) {
+        this.owner = owner;
     }
 }

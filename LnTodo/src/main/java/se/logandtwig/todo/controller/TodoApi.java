@@ -14,11 +14,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import se.logandtwig.todo.controller.response.TodoDto;
 import se.logandtwig.todo.model.TodoEntity;
+import se.logandtwig.todo.model.UserEntity;
 import se.logandtwig.todo.repository.TodoRepository;
 import se.logandtwig.todo.repository.UserRepository;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 public class TodoApi {
@@ -35,102 +38,63 @@ public class TodoApi {
         return "SAY HIIII!!";
     }
 
-    /**
-     * * / 2. En GET-endpoint som svarar med en lista som innehåller en given användares samtliga TODOs i databasen. /*
-     * *
-     */
     @GetMapping("/todo")
     @CrossOrigin
-    public ResponseEntity<List<TodoEntity>> getAll(@RequestParam(value = "username") String username) {
+    public ResponseEntity<List<TodoDto>> getAll(@RequestParam(value = "username") String username) {
 
-        ArrayList<TodoEntity> todoList = new ArrayList<TodoEntity>();
-
-        /**
-         * Didn't figure extended for out....outherwise that looks way more badass * / for(TodoEntity r :
-         * todoRepository.findAll()) { todoList.add(r); } /**
-         */
-
-        for (int i = 0; i < todoRepository.count(); i++) {
-
-            if (todoRepository.findAll().get(i).getOwner().getUsername().equals(username)) {
-                todoList.add(todoRepository.findAll().get(i));
-            }
+        // ignoring concerns about no splitting api, domain and database code you could simply map the list and return it, once a proper repository method is declared.
+        Optional<UserEntity> user = userRepository.findByUsername(username);
+        if (user.isPresent()) {
+            List<TodoDto> todoEntities = user.get().getTodoEntities()
+                    .stream()
+                    .map(todoEntity -> new TodoDto(todoEntity.getId(), todoEntity.getTask(), todoEntity.getOwner().getUsername()))
+                    .collect(Collectors.toList());
+            return new ResponseEntity<>(todoEntities, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(Collections.emptyList(), HttpStatus.OK);
         }
-
-        if (todoList.isEmpty()) { // nothing found for this user
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .header("Error Message", "No ToDos for user: " + username)
-                    .build();
-        }
-
-        return ResponseEntity.ok(todoList);// new ArrayList<>(); // Implement me
     }
 
-    /**
-     * / 3. En GET-endpoint som svarar med en specifik todo i databasen givet ett ID, förutsatt att den tillhör
-     * användaren. 3.1 Om det givna IDt för TODOn inte matchar den givna användarens username ska detta hanteras på
-     * lämpligt sätt. /
-     **/
     @GetMapping("/todo/{id}")
     @CrossOrigin
-    // public TodoDto getOne(@PathVariable(value = "id") Long id, @RequestParam(value = "username") String username) {
-    // //ToDo ID //The user --> Make sure the user owns this ToDo ID
     public ResponseEntity<TodoDto> getOne(@PathVariable(value = "id") Long id,
-            @RequestParam(value = "username") String username) { // ToDo ID //The user --> Make sure the user owns this
-                                                                 // ToDo ID
+            @RequestParam(value = "username") String username) {
 
-        try { // just in case someone throws null into id
-            if (!todoRepository.findById(id).isPresent()
-                    || !todoRepository.findById(id).get().getOwner().getUsername().equals(username)) {// Check if the
-                                                                                                      // ToDo ID and
-                                                                                                      // username exists
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .header("Error Message", "id(owner:{id:}) or task description(task:) is missing")
-                        .build();
+        // Basically what you did, but more readable
+        Optional<TodoEntity> todo = todoRepository.findById(id);
+        if (todo.isPresent()) {
+            if (username.equals(todo.get().getOwner().getUsername())) {
+                TodoDto todoDto = new TodoDto(todo.get().getId(), todo.get().getTask(), todo.get().getOwner().getUsername());
+                return new ResponseEntity<>(todoDto, HttpStatus.OK);
             }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).header("Error Message", e.getMessage()).build();
         }
-        return ResponseEntity.ok(new TodoDto(id, todoRepository.findById(id).get().getTask(), username));
-
-        /* alternative returns* / TodoDto p = new TodoDto(); URI location =
-         * ServletUriComponentsBuilder.fromCurrentRequest() .path("/{id}") .buildAndExpand(p.getId()) .toUri();
-         * 
-         * return ResponseEntity.created(location).header("MyResponseHeader",
-         * "MyValue").contentType(MediaType.APPLICATION_JSON).body(new TodoDto(id,Return_String,username)); / **/
-
-        // return new TodoDto(id,Return_String,username);
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     /**
      * * / 1. En POST-endpoint som sparar en ny todo till databasen och svarar med den skapade TODOn, inkl. IDt. /**
      */
-    // --> Bytte till TodoEntity i requestbodyn, fattade inte hur jag skulle få värdena från TodoDto utan setters i
-    // entityn
     @PostMapping("/todo")
     @CrossOrigin
-    public ResponseEntity<TodoDto> create(@RequestBody TodoEntity todo,
+    public ResponseEntity<TodoDto> create(@RequestBody TodoDto todo, // Use Dto instead
             @RequestParam(value = "username") String username) {
-
-        // Check if the ToDo ID and username exists
-        if ((todo.getTask().isEmpty()) || (todo.getOwner() == null) || (todo.getOwner().getId() == null)) {
+        // Id should be generated serverside and ignored on creation. POST should be idempotent
+        if ((todo.getTask().isEmpty()) || todo.getUsername() == null || todo.getUsername().trim().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .header("Error Message", "id(owner:{id:}) or task description(task:) is missing")
                     .build();
         }
 
-        // Check if username matches userID in the request. If it does, save and return, otherwise NOT_FOUND reply
-        for (int i = 0; i < userRepository.count(); i++) {
-            if ((userRepository.findAll().get(i).getUsername().equals(username))
-                    && (todo.getOwner().getId() == userRepository.findAll().get(i).getId())) {
-                todoRepository.save(todo);
-                return ResponseEntity.ok(new TodoDto(todo.getId(), todo.getTask(), username));
-            }
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .header("Error Message", "id did not match with the username")
-                .build();
-
+        // create entity from request
+        UserEntity owner = userRepository.findByUsername(todo.getUsername()).orElse(new UserEntity(username));
+        TodoEntity todoEntity = new TodoEntity();
+        todoEntity.setTask(todo.getTask());
+        todoEntity.setOwner(owner);
+        // persist new entity
+        TodoEntity entity = todoRepository.save(todoEntity);
+        // construct new dto for response
+        TodoDto result = new TodoDto(entity.getId(), entity.getTask(), entity.getOwner().getUsername());
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
     /**
@@ -140,29 +104,21 @@ public class TodoApi {
 
     @DeleteMapping("/todo/{id}")
     @CrossOrigin
-    public ResponseEntity<TodoDto> delete(@PathVariable(value = "id") Long id,
+    public ResponseEntity<Void> delete(@PathVariable(value = "id") Long id,
             @RequestParam(value = "username") String username) {
 
-        try {
-            if (!todoRepository.findById(id).get().getOwner().getUsername().equals(username)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .header("Error Message", "Task id does not match username")
-                        .build();
+        Optional<TodoEntity> todo = todoRepository.findById(id);
+        if (todo.isPresent() && username != null && !username.trim().isEmpty()) {
+            if (username.equals(todo.get().getOwner().getUsername())) {
+                todoRepository.deleteById(id);
+                return ResponseEntity.status(HttpStatus.OK).build();
             }
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .header("Error Message", "Task id is not defined")
-                    .build();
         }
-
-        todoRepository.deleteById(id);
-        return ResponseEntity.status(HttpStatus.OK).header("Message", "Item was deleted").build();
-
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     /**/
-
+    // Sorry, ran out of time...
     // Optional bonus! //
     @PutMapping("/todo")
     @CrossOrigin
